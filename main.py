@@ -35,6 +35,12 @@ def parse_command(string):
             return Var(args)
         case "get":
             return Get(args)
+        case "collection":
+            return "TODO"
+        case "high":
+            return "TODO"
+        case "low":
+            return "TODO"
 
 
 def parse_line(line):
@@ -93,8 +99,20 @@ def parse_varithon_file(filepath):
 
 
 def compile_varithon_file(destination_filepath, parsed_line_list):
+    """ Compiles a parsed list of lines into a single python file. Each compilation is random and independent
+        of any previous compilation.
+
+        :param destination_filepath a string representing a filepath for the destination compiled file
+        :param parsed_line_list a list of lists, each interior list representing a single line of the Varithon file """
     state = {}
 
+    # first collapse every command in sequence
+    for line in parsed_line_list:
+        for item in line:
+            if isinstance(item, Command):
+                item.collapse(state)
+
+    # then open the file and write each command to it
     with open(destination_filepath, "w") as f:
         for line in parsed_line_list:
             for item in line:
@@ -104,6 +122,14 @@ def compile_varithon_file(destination_filepath, parsed_line_list):
                     f.write(item)
 
 
-compile_varithon_file("compiled/hello.txt", parse_varithon_file("hello.txt"))
+if __name__ == "__main__":
+    FILE_NAME = "hello"
+    FILE_EXTENSION = ".txt"
+    COMPILATION_COUNT = 5
+
+    parsed = parse_varithon_file(FILE_NAME + FILE_EXTENSION)
+
+    for i in range(COMPILATION_COUNT):
+        compile_varithon_file("compiled/" + FILE_NAME + "_" + str(i) + FILE_EXTENSION, parsed)
 
 
