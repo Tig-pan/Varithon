@@ -10,17 +10,50 @@
 from commands.command import Command
 from commands.var import Var
 from commands.get import Get
+from commands.collection import Collection
 from errors import *
 
+COMMAND_START = "~["
+COMMAND_END = "]~"
 
-COMMAND_START = "~~["
-COMMAND_END = "]~~"
+
+def tokenize_command(string):
+    """ Parses a command string, and returns a list of all the tokens in it. A
+        token is defined as either a string or a Command object. Command strings
+        may have nested command objects by enclosing the command in curly braces,
+        then it is interpreted as a command instead of as a string.
+
+        :param string A string representing the body of a varithon statement
+            If this string is unable to be converted, this function will throw
+            a VarithonSyntaxException exception
+        :return a list containing strings and/or Command objects"""
+
+    tokens = []
+
+    brace_level = 0
+    last_tokenized_index = 0
+    for i in range(len(string) + 1):
+        if i == len(string) or (string[i] == ' ' and brace_level == 0):
+            if i > last_tokenized_index:    # more than one character
+                tokens.append(string[last_tokenized_index:i])
+                last_tokenized_index = i + 1
+        elif string[i] == '{':
+            if brace_level == 0:                # first brace, therefore store the index
+                last_tokenized_index = i
+            brace_level += 1
+        elif string[i] == '}':
+            brace_level -= 1
+            if brace_level == 0:                # closing off the first brace, therefore recursively parse this as a Command token
+                tokens.append(parse_command(string[last_tokenized_index + 1:i]))
+                last_tokenized_index = i + 1
+
+    return tokens
 
 
 def parse_command(string):
     """ Parses and returns a Command object given a string representing
-        that command. Ex. The full varithon statement ~~[var-data a]~~ would result
-        in calling this function with the argument of "var-data a".
+        that command. Ex. The full varithon statement ~~[var a]~~ would result
+        in calling this function with the argument of "var a".
 
         :param string A string representing the body of a varithon statement
             If this string is unable to be converted, this function will throw
@@ -28,18 +61,19 @@ def parse_command(string):
         :return a Command object, possibly a SyntaxException is thrown
             if the string is unable to be parsed """
 
-    args = string.strip().lower().split(" ")
+    tokens = tokenize_command(string)
+    print(tokens, string)
 
-    match args[0]:
+    match tokens.pop(0):
         case "var":
-            return Var(args)
+            return Var(tokens)
         case "get":
-            return Get(args)
+            return Get(tokens)
         case "collection":
+            return Collection(tokens)
+        case "best":
             return "TODO"
-        case "high":
-            return "TODO"
-        case "low":
+        case "rand":
             return "TODO"
 
 
@@ -65,7 +99,7 @@ def parse_line(line):
             command, after_end = after_start[:command_end_index], after_start[command_end_index + len(COMMAND_END):]
 
             line_list = [parse_command(command)]
-            if len(before_start) > 0:       # prepend before the start of the command, as long as it isn't empty
+            if len(before_start) > 0:  # prepend before the start of the command, as long as it isn't empty
                 line_list.insert(0, before_start)
             line_list.extend(parse_line(after_end))  # recursive to get all commands in the line
 
@@ -104,32 +138,29 @@ def compile_varithon_file(destination_filepath, parsed_line_list):
 
         :param destination_filepath a string representing a filepath for the destination compiled file
         :param parsed_line_list a list of lists, each interior list representing a single line of the Varithon file """
-    state = {}
+
+    varithon_state = {}
+    python_state = set()
 
     # first collapse every command in sequence
     for line in parsed_line_list:
         for item in line:
             if isinstance(item, Command):
-                item.collapse(state)
+                item.collapse(varithon_state, python_state, line)
 
     # then open the file and write each command to it
     with open(destination_filepath, "w") as f:
         for line in parsed_line_list:
             for item in line:
-                if isinstance(item, Command):
-                    f.write(item.get_result(state))
-                else:               # string
-                    f.write(item)
+                f.write(str(item))
 
 
-if __name__ == "__main__":
+print(tokenize_command("var -b {rand -i 3 5} {rand -f 0 100}"))
+if __name__ == "__main__" and False:
     FILE_NAME = "hello"
-    FILE_EXTENSION = ".txt"
     COMPILATION_COUNT = 5
 
-    parsed = parse_varithon_file(FILE_NAME + FILE_EXTENSION)
+    parsed = parse_varithon_file("samples/" + FILE_NAME + ".vy")
 
     for i in range(COMPILATION_COUNT):
-        compile_varithon_file("compiled/" + FILE_NAME + "_" + str(i) + FILE_EXTENSION, parsed)
-
-
+        compile_varithon_file("compiled/" + FILE_NAME + "_" + str(i) + ".py", parsed)
