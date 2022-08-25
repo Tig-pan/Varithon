@@ -35,4 +35,4 @@ class Get(Command):
         if self.varithon_name not in varithon_state:
             raise SyntaxException(f"Varithon variable '{self.varithon_name}' not found.")
 
-        self.result += self.add_token_lines(varithon_state[self.varithon_name])
+        self.result = self.add_token_lines(varithon_state[self.varithon_name])

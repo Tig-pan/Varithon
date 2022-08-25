@@ -18,7 +18,23 @@ def test_collection_a():
 
 
 def test_collection_b():
-    assert_varithon_output("test_collection_b", None, "")
+    assert_varithon_output("test_collection_b", "500", "")
+
+
+def test_collection_c():
+    assert_varithon_output("test_collection_c", "[['a'], ['a']]", "")
+
+
+def test_collection_d():
+    assert_varithon_output("test_collection_d", "[[['a'], ['a']], [['a'], ['a']], [['a'], ['a']]]", "")
+
+
+def test_rand_a():
+    assert_varithon_output("test_rand_a", None, "")
+
+
+def test_collection_rand_a():
+    assert_varithon_output("test_collection_rand_a", None, "")
 
 
 ############################################################################

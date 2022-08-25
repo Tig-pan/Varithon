@@ -1,4 +1,6 @@
-~[var a]~ = ~[collection -b {rand -i 3 5} {rand -f 0 100}]~
+~[var ___hgf54______]~ = ~[collection -b 10 50]~
 
-for ~[var b]~ in ~[get a]~:
-    print(~[get b]~)
+~[var ___gfd0___]~ = 0
+for ~[var _345jkj]~ in ~[get ___hgf54______]~:
+    ~[get ___gfd0___]~ += ~[get _345jkj]~
+print(~[get ___gfd0___]~)

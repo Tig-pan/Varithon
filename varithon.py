@@ -11,6 +11,7 @@ from commands.command import Command
 from commands.var import Var
 from commands.get import Get
 from commands.collection import Collection
+from commands.rand import Rand
 from errors import *
 
 COMMAND_START = "~["
@@ -62,7 +63,6 @@ def parse_command(string):
             if the string is unable to be parsed """
 
     tokens = tokenize_command(string)
-    print(tokens, string)
 
     match tokens.pop(0):
         case "var":
@@ -74,7 +74,7 @@ def parse_command(string):
         case "best":
             return "TODO"
         case "rand":
-            return "TODO"
+            return Rand(tokens)
 
 
 def parse_line(line):
@@ -142,11 +142,33 @@ def compile_varithon_file(destination_filepath, parsed_line_list):
     varithon_state = {}
     python_state = set()
 
-    # first collapse every command in sequence
-    for line in parsed_line_list:
-        for item in line:
-            if isinstance(item, Command):
-                item.collapse(varithon_state, python_state, line)
+    # continue collapsing until there are no more commands
+    next_line_list = []
+    contains_command = True
+    while contains_command:
+        contains_command = False
+        # first collapse every command in sequence
+        for line in parsed_line_list:
+            pre_lines = []
+            new_line = []
+            post_lines = []
+            for item in line:
+                if isinstance(item, Command):
+                    contains_command = True
+                    item.collapse(varithon_state, python_state, line)
+
+                    pre_lines.extend(item.get_pre_lines())
+                    new_line.append(item.get_result())
+                    post_lines.extend(item.get_post_lines())
+                else:
+                    new_line.append(item)
+
+            next_line_list.extend(pre_lines)
+            next_line_list.append(new_line)
+            next_line_list.extend(post_lines)
+
+        parsed_line_list = next_line_list
+        next_line_list = []
 
     # then open the file and write each command to it
     with open(destination_filepath, "w") as f:
@@ -155,7 +177,6 @@ def compile_varithon_file(destination_filepath, parsed_line_list):
                 f.write(str(item))
 
 
-print(tokenize_command("var -b {rand -i 3 5} {rand -f 0 100}"))
 if __name__ == "__main__" and False:
     FILE_NAME = "hello"
     COMPILATION_COUNT = 5

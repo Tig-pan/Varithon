@@ -25,6 +25,9 @@ class Var(Command):
 
         self.varithon_name = tokens.pop(0)
 
+        if self.varithon_name[0].isdigit():
+            raise SyntaxException(f"Invalid 'var' command, Varithon variable name cannot start with a digit.")
+
         self.extra_options = tokens  # first element was removed by the pop
 
     def collapse(self, varithon_state, python_state, context):
@@ -49,4 +52,4 @@ class Var(Command):
         varithon_state[self.varithon_name] = var_name
         python_state.add(var_name)
 
-        self.result += self.add_token_lines(var_name)
+        self.result = self.add_token_lines(var_name)

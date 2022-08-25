@@ -1,5 +1,10 @@
+import random
+
 from commands.command import Command
+from commands.var import Var
+from commands.get import Get
 from errors import *
+from utils import *
 
 
 class Collection(Command):
@@ -42,20 +47,45 @@ class Collection(Command):
                 strings and Command objects """
         super().collapse(varithon_state, python_state, context)
 
+        choice = random.random()
+
+        if choice < 0.2:    # build list using append
+            collection = self.get_collection(varithon_state, python_state, context)
+
+            var_name = rand_v_name()
+
+            self.pre_lines.append([get_indentation(context), Var([var_name]), " = []\n"])
+            self.result = Get([var_name])
+
+            for item in collection:
+                self.post_lines.append([get_indentation(context), Get([var_name]), ".append(", item, ")\n"])
+        else:
+            self.result = get_list_literal_string(self.get_collection(varithon_state, python_state, context)) # TODO: fix by adding new command that converts its arguments to a list literal string
+
+    def get_collection(self, varithon_state, python_state, context):
+        """ Gets a list of tokens representing the output of this collection command.
+
+            :param varithon_state a dictionary containing the current state of varithon memory for this
+                compilation, contains information such as variable name associations
+            :param python_state a set containing python variable names in the current scope
+            :param context the line this command is contained within, this is a list containing
+                strings and Command objects
+            :return a list of tokens representing the output of this collection command"""
         collection = []
 
         if self.flag == "b":
             try:
                 size = int(self.tokens[1])
 
-                for i in range(size):
-                    if i != 0 and isinstance(self.tokens[2], Command):
-                        self.tokens[2].collapse(varithon_state, python_state, context)
+                if size >= 1:
                     collection.append(self.add_token_lines(self.tokens[2]))
+
+                for i in range(1, size):
+                    collection.append(self.tokens[2])
             except ValueError as e:
                 raise SyntaxException(f"Could not convert size parameter to integer.")
         else:
             for item in self.tokens:
                 collection.append(self.add_token_lines(item))
 
-        self.result = "[" + ", ".join(collection) + "]"
+        return collection
